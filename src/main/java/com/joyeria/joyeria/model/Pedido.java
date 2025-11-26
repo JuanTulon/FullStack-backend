@@ -1,0 +1,58 @@
+package com.joyeria.joyeria.model;
+import java.util.Date;
+import java.util.List;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+
+@Entity  
+@Table(name= "pedido")
+@Data 
+@NoArgsConstructor  
+@AllArgsConstructor  
+@Schema(name = "Pedido", description = "Entidad que representa un pedido realizado por un cliente en el sistema.")
+public class Pedido {
+
+    @Id 
+    @GeneratedValue(strategy = GenerationType.IDENTITY) 
+    @Schema(description = "Identificador único del pedido", example = "1")
+    private Integer idPedido;
+
+    @Column(nullable = false)
+    @Schema(description = "Fecha en que se realizó el pedido", example = "2023-10-01")
+    private Date fechaPedido;
+
+    @Column(nullable = false)
+    @Schema(description = "Estado del pedido", example = "Pendiente")
+    private String estadoPedido;
+
+    @Column(nullable = false)
+    @Schema(description = "Total del pedido en pesos chilenos", example = "50000")
+    private Integer totalPedido;
+
+    @Column(nullable = false)
+    @Schema(description = "Dirección de envío del pedido", example = "Avenida Siempre Viva 1234, Santiago")
+    private String direccionEnvio;
+
+    @Column(nullable = false)
+    @Schema(description = "Método de pago utilizado para el pedido", example = "Tarjeta de crédito")
+    private String metodoPago;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_usuario", nullable = false,foreignKey = @ForeignKey(name = "fk_pedido_usuario"))
+    @JsonBackReference("usuario-pedidos")
+    private Usuario usuario;
+
+    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("pedido-detalles")
+    private List<DetallePedido> detalles;
+
+    @OneToOne(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Envio envio;
+}
