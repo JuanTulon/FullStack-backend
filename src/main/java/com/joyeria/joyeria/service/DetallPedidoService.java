@@ -27,10 +27,26 @@ public class DetallPedidoService {
         return detalles;
     }
 
+    @Transactional
     public DetallePedido save(DetallePedido detalle) {
         return detallPedidoRepository.save(detalle);
     }
 
+    @Transactional
+    public DetallePedido actualizarDetallePedido(Integer id, DetallePedido detallePedidoDetalles) throws Exception {
+        DetallePedido detallePedido = detallPedidoRepository.findById(id)
+                .orElseThrow(() -> new Exception("DetallePedido no encontrado"));
+
+        // Actualizamos solo los campos permitidos
+        detallePedido.setCantidadProducto(detallePedidoDetalles.getCantidadProducto());
+        detallePedido.setSubtotal(detallePedidoDetalles.getSubtotal());        
+        detallePedido.setProducto(detallePedidoDetalles.getProducto());
+        detallePedido.setPedido(detallePedidoDetalles.getPedido());
+
+        return detallPedidoRepository.save(detallePedido);
+    }
+
+    @Transactional
     public void delete(Integer id) {
         if (!detallPedidoRepository.existsById(id)) {
             throw new RuntimeException("No se puede eliminar. DetallePedido no encontrado con ID: " + id);

@@ -36,10 +36,24 @@ public class CategoriaService {
                 .orElseThrow(() -> new RuntimeException("Categoría no encontrada con ID: " + id));
     }
 
+    @Transactional
     public Categoria save(Categoria categoria) {
         return categoriaRepository.save(categoria);
     }
 
+    @Transactional
+    public Categoria actualizarCategoria(Integer id, Categoria categoriaDetalles) throws Exception {
+        Categoria categoria = categoriaRepository.findById(id)
+                .orElseThrow(() -> new Exception("Categoría no encontrada"));
+
+        // Actualizamos solo los campos permitidos
+        categoria.setNombreCategoria(categoriaDetalles.getNombreCategoria());
+        
+
+        return categoriaRepository.save(categoria);
+    }
+
+    @Transactional
     public void delete(Integer id) {
         if (!categoriaRepository.existsById(id)) {
             throw new RuntimeException("No se puede eliminar. Categoría no encontrada con ID: " + id);

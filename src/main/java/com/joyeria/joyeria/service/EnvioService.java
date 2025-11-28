@@ -28,10 +28,24 @@ public class EnvioService {
                 .orElseThrow(() -> new RuntimeException("Envío no encontrado con ID: " + id));
     }
 
+    @Transactional
     public Envio save(Envio envio) {
         return envioRepository.save(envio);
     }
 
+    @Transactional
+    public Envio actualizarEnvio(Integer id, Envio envioDetalles) throws Exception {
+        Envio envio = envioRepository.findById(id)
+                .orElseThrow(() -> new Exception("Envío no encontrado"));
+
+        // Actualizamos solo los campos permitidos
+        envio.setEstado_envio(envioDetalles.getEstado_envio());
+        envio.setFecha_envio(envioDetalles.getFecha_envio());
+        
+        return envioRepository.save(envio);
+    }
+
+    @Transactional
     public void delete(Integer id) {
         if (!envioRepository.existsById(id)) {
             throw new RuntimeException("No se puede eliminar. Envío no encontrado con ID: " + id);

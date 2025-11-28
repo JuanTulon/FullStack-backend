@@ -29,10 +29,28 @@ public class PedidoService {
                 .orElseThrow(() -> new RuntimeException("Pedido no encontrado con ID: " + id));
     }
 
+    @Transactional
     public Pedido save(Pedido pedido) {
         return pedidorepository.save(pedido);
     }
 
+    @Transactional
+    public Pedido actualizarPedido(Integer id, Pedido pedidoDetalles) throws Exception {
+        Pedido pedido = pedidorepository.findById(id)
+                .orElseThrow(() -> new Exception("Pedido no encontrado"));
+
+        // Actualizamos solo los campos permitidos
+        pedido.setFechaPedido(pedidoDetalles.getFechaPedido());
+        pedido.setTotalPedido(pedidoDetalles.getTotalPedido());
+        pedido.setEstadoPedido(pedidoDetalles.getEstadoPedido());
+        pedido.setDireccionEnvio(pedidoDetalles.getDireccionEnvio());
+        pedido.setMetodoPago(pedidoDetalles.getMetodoPago());
+        
+
+        return pedidorepository.save(pedido);
+    }
+
+    @Transactional
     public void delete(Integer id) {
         if (!pedidorepository.existsById(id)) {
             throw new RuntimeException("No se puede eliminar. Pedido no encontrado con ID: " + id);
@@ -40,6 +58,7 @@ public class PedidoService {
         pedidorepository.deleteById(id);
     }
 
+    @Transactional
     public List<Pedido> findByFechaPedidoBetween(Date fechaInicio, Date fechaFin) {
         List<Pedido> pedidos = pedidorepository.findByFechaPedidoBetween(fechaInicio, fechaFin);
         if (pedidos.isEmpty()) {
