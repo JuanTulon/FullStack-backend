@@ -38,6 +38,9 @@ public class Producto {
     @Schema(description = "Stock disponible", example = "10")
     private Integer stock;
 
+    @Column(length = 500)
+    private String foto;
+
     //Usamos @JsonIgnore para que al listar productos NO traiga todo el historial de ventas
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore 
