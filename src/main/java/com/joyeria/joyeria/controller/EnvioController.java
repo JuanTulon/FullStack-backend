@@ -2,24 +2,20 @@ package com.joyeria.joyeria.controller;
 
 import com.joyeria.joyeria.model.Envio;
 import com.joyeria.joyeria.service.EnvioService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
-import org.springframework.hateoas.EntityModel;
-import org.springframework.hateoas.Link;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
-@Tag(name = "envio", description = "operaciones relacionadas con los envios")
+@Tag(name = "Envíos", description = "Seguimiento y gestión de despachos de pedidos")
 @RestController
 @RequestMapping("/api/v1/envios")
 public class EnvioController {
@@ -27,139 +23,133 @@ public class EnvioController {
     @Autowired
     private EnvioService envioService;
 
-    @Operation(summary = "Listar todos los envios de los pedidos", responses = {
-            @ApiResponse(responseCode = "200", description = "Lista de envíos obtenidos correctamente",
-                content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Envio.class),
-                    examples = @ExampleObject(value = "[{ \"id\": 1, \"direccion\": \"Calle 1\", \"fechaEnvio\": \"2023-01-01\", \"estado\": \"Enviado\" }, { \"id\": 2, \"direccion\": \"Calle 2\", \"fechaEnvio\": \"2023-01-02\", \"estado\": \"Pendiente\" }]")
-                )
-            ),
-            @ApiResponse(responseCode = "204", description = "No hay envíos registrados",
-                content = @Content)
+    // --- LISTAR ENVÍOS ---
+    @Operation(summary = "Listar todos los envíos", description = "Muestra el historial de envíos incluyendo el pedido asociado.", responses = {
+        @ApiResponse(responseCode = "200", description = "Lista encontrada",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = Envio.class),
+                examples = @ExampleObject(value = """
+                    [
+                        {
+                            "id_envio": 10,
+                            "fecha_envio": "2023-11-20",
+                            "estado_envio": "Entregado",
+                            "pedido": {
+                                "idPedido": 5,
+                                "totalPedido": 50000,
+                                "estadoPedido": "Pagado"
+                            }
+                        },
+                        {
+                            "id_envio": 11,
+                            "fecha_envio": "2023-11-25",
+                            "estado_envio": "En Camino",
+                            "pedido": {
+                                "idPedido": 8,
+                                "totalPedido": 120000,
+                                "estadoPedido": "Enviado"
+                            }
+                        }
+                    ]
+                """)
+            )
+        ),
+        @ApiResponse(responseCode = "204", description = "No hay envíos registrados", content = @Content)
     })
     @GetMapping
     public ResponseEntity<List<Envio>> listar() {
         List<Envio> envios = envioService.findAll();
-        if (envios.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(envios);
+        return envios.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(envios);
     }
 
-    @Operation(summary = "Guardar un nuevo envio", responses = {
-            @ApiResponse(responseCode = "201", description = "envio creado correctamente",
-                content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Envio.class),
-                    examples = @ExampleObject(value = "{ 'id': 1, 'direccion': 'Calle 1', 'fechaEnvio': '2023-01-01', 'estado': 'Enviado' }")
-                )
-            ),
-            @ApiResponse(responseCode = "400", description = "Solicitud inválida",
-                content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{ 'error': 'algun dato es inválido'}")
-                )
+    // --- CREAR ENVÍO (POST) ---
+    @Operation(summary = "Generar un nuevo envío", description = "Crea el registro de envío asociado a un Pedido existente (por ID).", responses = {
+        @ApiResponse(responseCode = "201", description = "Envío creado exitosamente",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = Envio.class),
+                examples = @ExampleObject(name = "Nuevo Envío", value = """
+                    {
+                        "fecha_envio": "2023-11-26",
+                        "estado_envio": "En Preparación",
+                        "pedido": {
+                            "idPedido": 1
+                        }
+                    }
+                """)
             )
+        ),
+        @ApiResponse(responseCode = "400", description = "Error: Pedido no existe o ya tiene envío asignado", content = @Content)
     })
     @PostMapping
-    public ResponseEntity<Envio> guardar(
-        @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "envio a crear",
-            required = true,
-            content = @Content(schema = @Schema(implementation = Envio.class),
-                examples = @ExampleObject(value = "{ 'id': 1, 'direccion': 'Calle 1', 'fechaEnvio': '2023-01-01', 'estado': 'Enviado' }" )
-            )
-        )
-        @RequestBody Envio envio) {
-        Envio envioNuevo = envioService.save(envio);
-        return ResponseEntity.status(HttpStatus.CREATED).body(envioNuevo);
+    public ResponseEntity<Envio> guardar(@RequestBody Envio envio) {
+        try {
+            Envio envioNuevo = envioService.save(envio);
+            return ResponseEntity.status(HttpStatus.CREATED).body(envioNuevo);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
-    @Operation(summary = "Buscar envio por id", responses = {
-            @ApiResponse(responseCode = "200", description = "envio encontrado",
-                content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Envio.class),
-                    examples = @ExampleObject(value = "{ 'id': 1, 'direccion': 'Calle 1', 'fechaEnvio': '2023-01-01', 'estado': 'Enviado' }")
-                )
-            ),
-            @ApiResponse(responseCode = "404", description = "envio no encontrado",
-                content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{ 'error': 'envio no encontrado' }")
-                )
-            )
+    // --- BUSCAR POR ID ---
+    @Operation(summary = "Buscar envío por ID", responses = {
+        @ApiResponse(responseCode = "200", description = "Envío encontrado",
+            content = @Content(schema = @Schema(implementation = Envio.class),
+            examples = @ExampleObject(value = """
+                {
+                    "id_envio": 10,
+                    "fecha_envio": "2023-11-20",
+                    "estado_envio": "Entregado",
+                    "pedido": {
+                        "idPedido": 5
+                    }
+                }
+            """))
+        ),
+        @ApiResponse(responseCode = "404", description = "No encontrado", content = @Content)
     })
-    @GetMapping("/{id_envio}")
-    public ResponseEntity<EntityModel<Envio>> buscar(
-        @Parameter(description = "id del envio a buscar", required = true, example = "1")
-        @PathVariable Integer id_envio) {
+    @GetMapping("/{id}")
+    public ResponseEntity<Envio> buscar(@PathVariable("id") Integer idEnvio) {
         try {
-            Envio envio = envioService.findById(id_envio);
-
-            EntityModel<Envio> recurso = EntityModel.of(envio);
-
-            // Enlace a sí mismo
-            Link selfLink = linkTo(methodOn(EnvioController.class).buscar(id_envio)).withSelfRel();
-            recurso.add(selfLink);
-
-            // Enlace al pedido relacionado
-            if (envio.getPedido() != null) {
-                Link pedidoLink = linkTo(methodOn(PedidoController.class).buscar(envio.getPedido().getIdPedido())).withRel("pedido");
-                recurso.add(pedidoLink);
-            }
-
-            return ResponseEntity.ok(recurso);
+            return ResponseEntity.ok(envioService.findById(idEnvio));
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
     }
 
-    @Operation(summary = "Actualizar un envio por id", responses = {
-            @ApiResponse(responseCode = "200", description = "envio actualizado correctamente",
-                content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Envio.class),
-                    examples = @ExampleObject(value = "{ 'id': 1, 'direccion': 'Calle 1', 'fechaEnvio': '2023-01-01', 'estado': 'Enviado' }"))
-            ),
-            @ApiResponse(responseCode = "404", description = "envio no encontrado",
-                content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{ 'error': 'envio no encontrado' }"))
+    // --- ACTUALIZAR ENVÍO (PUT) ---
+    @Operation(summary = "Actualizar estado o fecha", description = "Permite cambiar el estado del envío (ej: de 'En Preparación' a 'Enviado').", responses = {
+        @ApiResponse(responseCode = "200", description = "Actualizado correctamente",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = Envio.class),
+                examples = @ExampleObject(name = "Actualizar Estado", value = """
+                    {
+                        "fecha_envio": "2023-11-27",
+                        "estado_envio": "Enviado"
+                    }
+                """)
             )
+        ),
+        @ApiResponse(responseCode = "404", description = "Envío no encontrado", content = @Content)
     })
-    @PutMapping("/{id_envio}")
-    public ResponseEntity<Envio> actualizar(
-        @Parameter(description = "ID del envío a actualizar", required = true, example = "1")
-        @PathVariable Integer id_envio, 
-        @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Datos del envío a actualizar",
-            required = true,
-            content = @Content(schema = @Schema(implementation = Envio.class),
-                examples = @ExampleObject(value = "{ 'id': 1, 'direccion': 'Calle 1', 'fechaEnvio': '2023-01-01', 'estado': 'Enviado' }")
-            )
-        )
-        @RequestBody Envio envio) {
+    @PutMapping("/{id}")
+    public ResponseEntity<Envio> actualizar(@PathVariable("id") Integer idEnvio, @RequestBody Envio envio) {
         try {
-            Envio env = envioService.findById(id_envio);
-            env.setFecha_envio(envio.getFecha_envio());
-            env.setEstado_envio(envio.getEstado_envio());
-            env.setPedido(envio.getPedido());
-            envioService.save(env);
-            return ResponseEntity.ok(env);
+            // Nota: El servicio 'actualizarEnvio' solo actualiza fecha y estado, ignora el pedido
+            return ResponseEntity.ok(envioService.actualizarEnvio(idEnvio, envio));
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
     }
 
-    @Operation(summary = "Eliminar un envío", responses = {
-            @ApiResponse(responseCode = "204", description = " envío eliminado correctamente",
-                content = @Content),
-            @ApiResponse(responseCode = "404", description = " envío no encontrado",
-                content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{ 'error': ' envío no encontrado' }"))
-            )
+    // --- ELIMINAR ENVÍO ---
+    @Operation(summary = "Eliminar registro de envío por id", responses = {
+        @ApiResponse(responseCode = "204", description = "Eliminado correctamente", content = @Content),
+        @ApiResponse(responseCode = "404", description = "No encontrado", content = @Content)
     })
-    @DeleteMapping("/{id_envio}")
-    public ResponseEntity<?> eliminar(
-        @Parameter(description = "ID del envío a eliminar", required = true, example = "1")
-        @PathVariable Integer id_envio) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable("id") Integer idEnvio) {
         try {
-            envioService.delete(id_envio);
+            envioService.delete(idEnvio);
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
             return ResponseEntity.notFound().build();

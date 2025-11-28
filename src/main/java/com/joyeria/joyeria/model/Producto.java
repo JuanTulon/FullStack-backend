@@ -1,56 +1,52 @@
 package com.joyeria.joyeria.model;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-
-import io.swagger.v3.oas.annotations.media.Schema;
-
-@Entity  // Marca esta clase como una entidad JPA.
-@Table(name= "producto")  // Especifica el nombre de la tabla en la base de datos.
-@Data  // Genera automáticamente getters, setters, equals, hashCode y toString.
-@NoArgsConstructor  // Genera un constructor sin argumentos.
-@AllArgsConstructor  // Genera un constructor con un argumento por cada campo en la clase.
-@Schema(name = "Producto", description = "Entidad que representa un producto en el sistema.")
+@Entity
+@Table(name= "producto")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(name = "Producto", description = "Entidad que representa un producto del catálogo.")
 public class Producto {
 
-    @Id  // Especifica el identificador primario.
-    @GeneratedValue(strategy = GenerationType.IDENTITY)  // El valor del ID se generará automáticamente.
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Schema(description = "Identificador único del producto", example = "1")
     private Integer idProducto;
 
-    @Column(nullable=false)  // Esta columna no puede ser nula.
-    @Schema(description = "Nombre del producto", example = "Perfume Floral")
+    @Column(nullable=false)
+    @Schema(description = "Nombre del producto", example = "Anillo de Diamantes")
     private String nombreProducto;
 
-    @Column(nullable=false)  // Esta columna no puede ser nula.
-    @Schema(description = "Descripción del producto", example = "Un perfume floral fresco y encantador.")
+    @Column(nullable=false)
+    @Schema(description = "Descripción detallada", example = "Anillo de oro blanco de 18k con diamante central.")
     private String descripcionProducto;
 
-    @Column(nullable=true)  // Esta columna puede ser nula.
-    @Schema(description = "precio del producto", example = "50000")
+    @Column(nullable=true)
+    @Schema(description = "Precio unitario", example = "500000")
     private Integer precio;
 
-    @Column(nullable=false)  // Esta columna no puede ser nula.
-    @Schema(description = "Cantidad de stock disponible del producto", example = "100")
+    @Column(nullable=false)
+    @Schema(description = "Stock disponible", example = "10")
     private Integer stock;
 
+    //Usamos @JsonIgnore para que al listar productos NO traiga todo el historial de ventas
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference("producto-detalles")
+    @JsonIgnore 
     private List<DetallePedido> detalles;
 
+    //Usamos @JsonIgnoreProperties para ver la categoría, pero sin sus productos (evita bucle)
     @ManyToOne
-    @JoinColumn(name = "idCategoria", nullable = false,foreignKey = @ForeignKey (name = "fk_categoria_producto"))
-    @JsonBackReference
+    @JoinColumn(name = "idCategoria", nullable = false, foreignKey = @ForeignKey(name = "fk_categoria_producto"))
+    @JsonIgnoreProperties("productos")
     private Categoria categoria;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_envio", nullable = false)
-    @JsonBackReference("producto-envio")
-    private Envio envio;
 }

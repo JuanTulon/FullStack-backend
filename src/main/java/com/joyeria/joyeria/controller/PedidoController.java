@@ -3,233 +3,184 @@ package com.joyeria.joyeria.controller;
 import com.joyeria.joyeria.model.Pedido;
 import com.joyeria.joyeria.model.DetallePedido;
 import com.joyeria.joyeria.service.PedidoService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
-import org.springframework.hateoas.EntityModel;
-import org.springframework.hateoas.Link;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
-import org.springframework.format.annotation.DateTimeFormat;
 import java.util.Date;
+import java.util.List;
 
-@Tag(name = "pedido", description = "operaciones relacionadas con los pedidos")
+@Tag(name = "Pedidos", description = "Gestión de órdenes de compra")
 @RestController
 @RequestMapping("/api/v1/pedidos")
-
 public class PedidoController {
 
     @Autowired
     private PedidoService pedidoService;
 
-    @Operation(summary = "Listar todos los pedidos", responses = {
-            @ApiResponse(responseCode = "200", description = "Lista de pedidos obtenidos correctamente",
-                content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Pedido.class),
-                    examples = @ExampleObject(value = "[{ \"id\": 1, \"direccion\": \"Calle 1\", \"fechaPedido\": \"2023-01-01\", \"estado\": \"Enviado\" }, { \"id\": 2, \"direccion\": \"Calle 2\", \"fechaPedido\": \"2023-01-02\", \"estado\": \"Pendiente\" }]")
-                )
-            ),
-            @ApiResponse(responseCode = "204", description = "No hay pedidos registrados",
-                content = @Content)
+    // --- LISTAR PEDIDOS ---
+    @Operation(summary = "Listar historial de pedidos", responses = {
+        @ApiResponse(responseCode = "200", description = "Pedidos encontrados",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = Pedido.class),
+                examples = @ExampleObject(value = """
+                    [
+                        {
+                            "idPedido": 1,
+                            "fechaPedido": "2023-11-25",
+                            "estadoPedido": "Pagado",
+                            "totalPedido": 50000,
+                            "direccionEnvio": "Av. Siempre Viva 742",
+                            "metodoPago": "WebPay",
+                            "usuario": {
+                                "id": 1,
+                                "nombre": "Juan",
+                                "email": "juan@example.com"
+                            },
+                            "detalles": []
+                        }
+                    ]
+                """)
+            )
+        ),
+        @ApiResponse(responseCode = "204", description = "No hay pedidos registrados", content = @Content)
     })
     @GetMapping
     public ResponseEntity<List<Pedido>> listar() {
-        List<Pedido> pedidos  = pedidoService.findAll();
-        if (pedidos.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(pedidos);
+        List<Pedido> pedidos = pedidoService.findAll();
+        return pedidos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(pedidos);
     }
 
-    @Operation(summary = "Guardar un nuevo Pedido", responses = {
-            @ApiResponse(responseCode = "201", description = "Pedido creado correctamente",
-                content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Pedido.class),
-                    examples = @ExampleObject(value = "{ 'id': 1, 'direccion': 'Calle 1', 'fechaPedido': '2023-01-01', 'estado': 'Enviado' }")
-                )
-            ),
-            @ApiResponse(responseCode = "400", description = "Solicitud inválida",
-                content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{ 'error': 'algun dato es inválido'}")
-                )
+    // --- CREAR PEDIDO (POST) ---
+    @Operation(summary = "Crear nuevo pedido", description = "Registra un pedido asociándolo a un usuario existente por su ID.", responses = {
+        @ApiResponse(responseCode = "201", description = "Pedido creado",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = Pedido.class),
+                examples = @ExampleObject(name = "Nuevo Pedido", value = """
+                    {
+                        "fechaPedido": "2023-11-26",
+                        "estadoPedido": "Pendiente",
+                        "totalPedido": 0,
+                        "direccionEnvio": "Calle Falsa 123, Santiago",
+                        "metodoPago": "Transferencia",
+                        "usuario": {
+                            "id": 1
+                        }
+                    }
+                """)
             )
+        ),
+        @ApiResponse(responseCode = "400", description = "Error: Usuario no existe o datos inválidos", content = @Content)
     })
     @PostMapping
-    public ResponseEntity<Pedido> guardar(
-        @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Pedido a crear",
-            required = true,
-            content = @Content(schema = @Schema(implementation = Pedido.class),
-                examples = @ExampleObject(value = "{ 'id': 1, 'direccion': 'Calle 1', 'fechaPedido': '2023-01-01', 'estado': 'Enviado' }" )
-            )
-        )
-        @RequestBody Pedido pedido) {
-        Pedido pedidosMuevo = pedidoService.save(pedido);
-        return ResponseEntity.status(HttpStatus.CREATED).body(pedidosMuevo);
+    public ResponseEntity<Pedido> guardar(@RequestBody Pedido pedido) {
+        try {
+            Pedido nuevo = pedidoService.save(pedido);
+            return ResponseEntity.status(HttpStatus.CREATED).body(nuevo);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
-    @Operation(summary = "Buscar Pedido por id", responses = {
-            @ApiResponse(responseCode = "200", description = "Pedido encontrado",
-                content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Pedido.class),
-                    examples = @ExampleObject(value = "{ 'id': 1, 'direccion': 'Calle 1', 'fechaPedido': '2023-01-01', 'estado': 'Enviado' }")
-                )
-            ),
-            @ApiResponse(responseCode = "404", description = "Pedido no encontrado",
-                content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{ 'error': 'Pedido no encontrado' }")
-                )
-            )
+    // --- BUSCAR POR ID ---
+    @Operation(summary = "Buscar pedido por ID", responses = {
+        @ApiResponse(responseCode = "200", description = "Encontrado",
+            content = @Content(schema = @Schema(implementation = Pedido.class),
+            examples = @ExampleObject(value = """
+                {
+                    "idPedido": 1,
+                    "fechaPedido": "2023-11-26",
+                    "estadoPedido": "Pendiente",
+                    "totalPedido": 25000,
+                    "usuario": { "id": 1, "nombre": "Juan" }
+                }
+            """))
+        ),
+        @ApiResponse(responseCode = "404", description = "No encontrado", content = @Content)
     })
-    @GetMapping("/{id_pedido}")
-    public ResponseEntity<EntityModel<Pedido>> buscar(
-        @Parameter(description = "ID del pedido a buscar", required = true, example = "1")
-        @PathVariable Integer id_pedido) {
+    @GetMapping("/{id}")
+    public ResponseEntity<Pedido> buscar(@PathVariable Integer id) {
         try {
-            Pedido pedido = pedidoService.findById(id_pedido);
-
-            EntityModel<Pedido> recurso = EntityModel.of(pedido);
-
-            // Enlace a sí mismo
-            Link selfLink = linkTo(methodOn(PedidoController.class).buscar(id_pedido)).withSelfRel();
-            recurso.add(selfLink);
-
-            // Enlace al Usuario del pedido
-            if (pedido.getUsuario() != null) {
-                Link UsuarioLink = linkTo(methodOn(UsuarioController.class).buscar(pedido.getUsuario().getId())).withRel("Usuario");
-                recurso.add(UsuarioLink);
-            }
-
-            // Enlace al envío del pedido
-            if (pedido.getEnvio() != null) {
-                Link envioLink = linkTo(methodOn(EnvioController.class).buscar(pedido.getEnvio().getId_envio())).withRel("envio");
-                recurso.add(envioLink);
-            }
-
-            // Enlace a los detalles del pedido
-            Link detallesLink = linkTo(methodOn(PedidoController.class).listarDetallesPorPedido(id_pedido)).withRel("detalles");
-            recurso.add(detallesLink);
-
-            return ResponseEntity.ok(recurso);
+            return ResponseEntity.ok(pedidoService.findById(id));
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
     }
 
-    @Operation(summary = "Actualizar un Pedido por id", responses = {
-            @ApiResponse(responseCode = "200", description = "Pedido actualizado correctamente",
-                content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Pedido.class),
-                    examples = @ExampleObject(value = "{ 'id': 1, 'direccion': 'Calle 1', 'fechaPedido': '2023-01-01', 'estado': 'Enviado' }"))
-            ),
-            @ApiResponse(responseCode = "404", description = "Pedido no encontrado",
-                content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{ 'error': 'Pedido no encontrado' }"))
+    // --- ACTUALIZAR PEDIDO (PUT) ---
+    @Operation(summary = "Actualizar pedido", description = "Permite actualizar estado, dirección, total, etc.", responses = {
+        @ApiResponse(responseCode = "200", description = "Actualizado correctamente",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = Pedido.class),
+                examples = @ExampleObject(name = "Actualizar Estado", value = """
+                    {
+                        "fechaPedido": "2023-11-26",
+                        "estadoPedido": "Enviado",
+                        "totalPedido": 25000,
+                        "direccionEnvio": "Calle Nueva 456",
+                        "metodoPago": "Transferencia"
+                    }
+                """)
             )
+        ),
+        @ApiResponse(responseCode = "404", description = "Pedido no encontrado", content = @Content)
     })
-    @PutMapping("/{id_pedido}")
-    public ResponseEntity<Pedido> actualizar(
-        @Parameter(description = "ID del pedido a actualizar", required = true, example = "1")
-        @PathVariable Integer id_pedido, 
-        @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Datos del Pedido a actualizar",
-            required = true,
-            content = @Content(schema = @Schema(implementation = Pedido.class),
-                examples = @ExampleObject(value = "{ 'id': 1, 'direccion': 'Calle 1', 'fechaPedido': '2023-01-01', 'estado': 'Enviado' }")
-            )
-        )
-        @RequestBody Pedido pedido) {
+    @PutMapping("/{id}")
+    public ResponseEntity<Pedido> actualizar(@PathVariable Integer id, @RequestBody Pedido pedido) {
         try {
-            Pedido ped = pedidoService.findById(id_pedido);
-            ped.setFechaPedido(pedido.getFechaPedido());
-            ped.setEstadoPedido(pedido.getEstadoPedido());
-            ped.setDireccionEnvio(pedido.getDireccionEnvio());
-            ped.setMetodoPago(pedido.getMetodoPago());
-            ped.setTotalPedido(pedido.getTotalPedido());
-
-            pedidoService.save(ped);
-            return ResponseEntity.ok(ped);
-        } catch ( Exception e ) {
-            return  ResponseEntity.notFound().build();
+            // Nota: El servicio actualiza fecha, total, estado, direccion, pago.
+            // No actualiza el usuario dueño del pedido (lógica de negocio habitual).
+            return ResponseEntity.ok(pedidoService.actualizarPedido(id, pedido));
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
         }
     }
 
-    @Operation(summary = "Eliminar un Pedido", responses = {
-            @ApiResponse(responseCode = "204", description = " Pedido eliminado correctamente",
-                content = @Content),
-            @ApiResponse(responseCode = "404", description = " Pedido no encontrado",
-                content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{ 'error': ' Pedido no encontrado' }"))
-            )
+    // --- ELIMINAR PEDIDO ---
+    @Operation(summary = "Eliminar pedido por su id", responses = {
+        @ApiResponse(responseCode = "204", description = "Eliminado correctamente", content = @Content),
+        @ApiResponse(responseCode = "404", description = "No encontrado", content = @Content)
     })
-    @DeleteMapping("/{id_pedido}")
-    public ResponseEntity<?> eliminar(
-        @Parameter(description = "ID del pedido a eliminar", required = true, example = "1")
-        @PathVariable Integer id_pedido) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
         try {
-            pedidoService.delete(id_pedido);
+            pedidoService.delete(id);
             return ResponseEntity.noContent().build();
-        } catch ( Exception e ) {
-            return  ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
         }
     }
 
-    @Operation(summary = "Listar detalles de un pedido por su ID", responses = {
-            @ApiResponse(responseCode = "200", description = "Lista de detalles del pedido obtenida correctamente",
-                content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = DetallePedido.class),
-                    examples = @ExampleObject(value = "[{ \"id\": 1, \"producto\": \"Producto 1\", \"cantidad\": 2, \"precio\": 100 }, { \"id\": 2, \"producto\": \"Producto 2\", \"cantidad\": 1, \"precio\": 50 }]")
-                )
-            ),
-            @ApiResponse(responseCode = "404", description = "Pedido no encontrado",
-                content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{ 'error': 'Pedido no encontrado' }")
-                )
-            )
-    })
-    @GetMapping("/{id_pedido}/detalles")
-    public ResponseEntity<List<DetallePedido>> listarDetallesPorPedido(@PathVariable Integer id_pedido) {
+    // --- ENDPOINTS ADICIONALES ---
+
+    @Operation(summary = "Ver productos (detalles) de un pedido por su ID")
+    @GetMapping("/{id}/detalles")
+    public ResponseEntity<List<DetallePedido>> listarDetalles(@PathVariable Integer id) {
         try {
-            Pedido pedido = pedidoService.findById(id_pedido);
+            Pedido pedido = pedidoService.findById(id);
             return ResponseEntity.ok(pedido.getDetalles());
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
     }
 
-    @Operation(
-        summary = "Buscar pedidos por rango de fechas",
-        description = "Obtiene todos los pedidos cuya fecha esté entre las fechas dadas (inclusive).",
-        parameters = {
-            @Parameter(name = "inicio", description = "Fecha de inicio (yyyy-MM-dd)", example = "2024-01-01"),
-            @Parameter(name = "fin", description = "Fecha de fin (yyyy-MM-dd)", example = "2025-12-31")
-        },
-        responses = {
-            @ApiResponse(responseCode = "200", description = "Lista de pedidos en el rango de fechas",
-                content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Pedido.class),
-                    examples = @ExampleObject(value = "[{ 'idPedido': 1, 'fechaPedido': '2024-05-01', 'estadoPedido': 'Enviado', ... }]"))
-            ),
-            @ApiResponse(responseCode = "204", description = "No hay pedidos en el rango de fechas", content = @Content)
-        }
-    )
+    @Operation(summary = "Buscar pedidos por rango de fechas")
     @GetMapping("/fecha")
-    public ResponseEntity<List<Pedido>> getPedidosPorRangoFechas(
-        @RequestParam("inicio") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date inicio,
-        @RequestParam("fin") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fin) {
+    public ResponseEntity<List<Pedido>> getPedidosPorFecha(
+            @Parameter(description = "Fecha inicio (yyyy-MM-dd)", example = "2023-01-01") 
+            @RequestParam("inicio") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date inicio,
+            @Parameter(description = "Fecha fin (yyyy-MM-dd)", example = "2023-12-31") 
+            @RequestParam("fin") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fin) {
         List<Pedido> pedidos = pedidoService.findByFechaPedidoBetween(inicio, fin);
-        if (pedidos.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(pedidos);
+        return pedidos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(pedidos);
     }
 }

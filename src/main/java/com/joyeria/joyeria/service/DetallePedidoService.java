@@ -1,7 +1,7 @@
 package com.joyeria.joyeria.service;
 
 import com.joyeria.joyeria.model.DetallePedido;
-import com.joyeria.joyeria.repository.DetallPedidoRepository;
+import com.joyeria.joyeria.repository.DetallePedidoRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -10,9 +10,9 @@ import java.util.List;
 
 @Service
 @Transactional
-public class DetallPedidoService {
+public class DetallePedidoService {
     @Autowired
-    private DetallPedidoRepository detallPedidoRepository;
+    private DetallePedidoRepository detallPedidoRepository;
 
     public DetallePedido findById(Integer id) {
         return detallPedidoRepository.findById(id)

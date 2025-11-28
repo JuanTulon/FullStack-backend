@@ -1,6 +1,6 @@
 package com.joyeria.joyeria.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
@@ -28,14 +28,18 @@ public class DetallePedido {
     @Schema(description = "Subtotal del detalle del pedido", example = "50000")
     private Integer subtotal;
 
+    // CAMBIO IMPORTANTE: Usamos @JsonIgnoreProperties
+    // Esto dice: "Trae el Pedido completo, pero ignora su campo 'detalles' para no hacer bucle"
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_pedido", nullable = false)
-    @JsonBackReference("pedido-detalles")
+    @JsonIgnoreProperties({"detalles", "hibernateLazyInitializer", "handler"}) 
     private Pedido pedido;
 
+    // CAMBIO IMPORTANTE: Usamos @JsonIgnoreProperties
+    // Esto dice: "Trae el Producto completo, pero ignora su campo 'detalles' para no hacer bucle"
     @ManyToOne
     @JoinColumn(name = "idProducto", nullable = false, foreignKey = @ForeignKey(name = "fk_detalle_producto"))
-    @JsonBackReference("producto-detalles")
+    @JsonIgnoreProperties({"detalles", "hibernateLazyInitializer", "handler"})
     private Producto producto;
 
 }

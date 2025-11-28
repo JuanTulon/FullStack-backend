@@ -1,8 +1,8 @@
 package com.joyeria.joyeria.model;
 import java.util.Date;
 import java.util.List;
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
@@ -25,7 +25,9 @@ public class Pedido {
     private Integer idPedido;
 
     @Column(nullable = false)
-    @Schema(description = "Fecha en que se realizó el pedido", example = "2023-10-01")
+    @Temporal(TemporalType.DATE)
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    @Schema(description = "Fecha de realización del pedido", example = "2023-10-25")
     private Date fechaPedido;
 
     @Column(nullable = false)
@@ -44,15 +46,19 @@ public class Pedido {
     @Schema(description = "Método de pago utilizado para el pedido", example = "Tarjeta de crédito")
     private String metodoPago;
 
+    // CAMBIO CLAVE: Usamos @JsonIgnoreProperties
+    // Permite ver el usuario que compró, pero ignora su lista de 'pedidos' para no hacer bucle.
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_usuario", nullable = false,foreignKey = @ForeignKey(name = "fk_pedido_usuario"))
-    @JsonBackReference("usuario-pedidos")
+    @JoinColumn(name = "id_usuario", nullable = false, foreignKey = @ForeignKey(name = "fk_pedido_usuario"))
+    @JsonIgnoreProperties({"pedidos", "hibernateLazyInitializer", "handler"})
     private Usuario usuario;
 
+    // Relación con Detalles (El corte de bucle lo hace la clase DetallePedido)
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference("pedido-detalles")
     private List<DetallePedido> detalles;
 
+    // Relación con Envio (El corte de bucle lo hace la clase Envio)
     @OneToOne(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("pedido")
     private Envio envio;
 }

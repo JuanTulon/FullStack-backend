@@ -2,179 +2,179 @@ package com.joyeria.joyeria.controller;
 
 import com.joyeria.joyeria.model.Producto;
 import com.joyeria.joyeria.service.ProductoService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
-@Tag(name = "productos", description = "operaciones relacionadas con los productos")
+@Tag(name = "Productos", description = "Gestión del catálogo de joyas")
 @RestController
 @RequestMapping("/api/v1/productos")
 public class ProductoController {
-@Autowired
 
+    @Autowired
     private ProductoService productoService;
 
-    @Operation(summary = "Listar todos los productos", responses = {
-            @ApiResponse(responseCode = "200", description = "Lista de productos obtenidos correctamente",
-                content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Producto.class),
-                    examples = @ExampleObject(value = "[{ \"id\": 1, \"nombre\": \"Producto 1\", \"descripcion\": \"Descripción del Producto 1\", \"precio\": 100.0, \"stock\": 10 }, { \"id\": 2, \"nombre\": \"Producto 2\", \"descripcion\": \"Descripción del Producto 2\", \"precio\": 200.0, \"stock\": 5 }]")
-                )
-            ),
-            @ApiResponse(responseCode = "204", description = "No hay productos registrados",
-                content = @Content)
+    // --- LISTAR PRODUCTOS ---
+    @Operation(summary = "Listar catálogo completo", description = "Devuelve la lista de productos con su categoría asociada.", responses = {
+        @ApiResponse(responseCode = "200", description = "Lista encontrada",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = Producto.class),
+                examples = @ExampleObject(value = """
+                    [
+                        {
+                            "idProducto": 1,
+                            "nombreProducto": "Anillo de Oro",
+                            "descripcionProducto": "18k con incrustaciones",
+                            "precio": 150000,
+                            "stock": 5,
+                            "categoria": {
+                                "idCategoria": 1,
+                                "nombreCategoria": "Anillos"
+                            }
+                        },
+                        {
+                            "idProducto": 2,
+                            "nombreProducto": "Collar de Perlas",
+                            "descripcionProducto": "Perlas naturales",
+                            "precio": 80000,
+                            "stock": 10,
+                            "categoria": {
+                                "idCategoria": 2,
+                                "nombreCategoria": "Collares"
+                            }
+                        }
+                    ]
+                """)
+            )
+        ),
+        @ApiResponse(responseCode = "204", description = "No hay productos", content = @Content)
     })
     @GetMapping
     public ResponseEntity<List<Producto>> listar() {
-        List<Producto> productos  = productoService.findAll();
-        if (productos.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(productos);
+        List<Producto> productos = productoService.findAll();
+        return productos.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(productos);
     }
 
-    @Operation(summary = "Guardar un nuevo producto", responses = {
-            @ApiResponse(responseCode = "201", description = "producto creado correctamente",
-                content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Producto.class),
-                    examples = @ExampleObject(value = "{ 'id': 1, 'nombre': 'Producto 1', 'descripcion': 'Descripción del Producto 1', 'precio': 100.0, 'stock': 10 }")
-                )
-            ),
-            @ApiResponse(responseCode = "400", description = "Solicitud inválida",
-                content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{ 'error': 'algun dato es inválido'}")
-                )
+    // --- CREAR PRODUCTO (POST) ---
+    @Operation(summary = "Crear nuevo producto", description = "Crea un producto asignándole una categoría existente por ID.", responses = {
+        @ApiResponse(responseCode = "201", description = "Producto creado",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = Producto.class),
+                examples = @ExampleObject(name = "Nuevo Producto", value = """
+                    {
+                        "nombreProducto": "Pulsera de Plata",
+                        "descripcionProducto": "Plata fina 925",
+                        "precio": 45000,
+                        "stock": 20,
+                        "categoria": {
+                            "idCategoria": 1
+                        }
+                    }
+                """)
             )
+        ),
+        @ApiResponse(responseCode = "400", description = "Error: Categoría no existe o datos inválidos", content = @Content)
     })
     @PostMapping
-    public ResponseEntity<Producto> guardar(
-        @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "producto a crear",
-            required = true,
-            content = @Content(schema = @Schema(implementation = Producto.class),
-                examples = @ExampleObject(value = "{ 'id': 1, 'nombre': 'Producto 1', 'descripcion': 'Descripción del Producto 1', 'precio': 100.0, 'stock': 10 }" )
-            )
-        )
-        @RequestBody Producto producto) {
-        Producto productoNuevo = productoService.save(producto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(productoNuevo);
+    public ResponseEntity<Producto> guardar(@RequestBody Producto producto) {
+        try {
+            Producto nuevo = productoService.save(producto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(nuevo);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
-    @Operation(summary = "Buscar Producto por id", responses = {
-            @ApiResponse(responseCode = "200", description = "Producto encontrado",
-                content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Producto.class),
-                    examples = @ExampleObject(value = "{ 'id': 1, 'nombre': 'Producto 1', 'descripcion': 'Descripción del Producto 1', 'precio': 100.0, 'stock': 10 }")
-                )
-            ),
-            @ApiResponse(responseCode = "404", description = "Producto no encontrado",
-                content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{ 'error': 'Producto no encontrado' }")
-                )
-            )
+    // --- BUSCAR POR ID ---
+    @Operation(summary = "Buscar producto por ID", responses = {
+        @ApiResponse(responseCode = "200", description = "Encontrado",
+            content = @Content(schema = @Schema(implementation = Producto.class),
+            examples = @ExampleObject(value = """
+                {
+                    "idProducto": 1,
+                    "nombreProducto": "Anillo de Oro",
+                    "descripcionProducto": "18k con incrustaciones",
+                    "precio": 150000,
+                    "stock": 5,
+                    "categoria": {
+                        "idCategoria": 1,
+                        "nombreCategoria": "Anillos"
+                    }
+                }
+            """))
+        ),
+        @ApiResponse(responseCode = "404", description = "No encontrado", content = @Content)
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Producto> buscar(
-        @Parameter(description = "ID del producto a buscar", required = true, example = "1")
-        @PathVariable("id") Integer idProducto) {
+    public ResponseEntity<Producto> buscar(@PathVariable Integer id) {
         try {
-            Producto producto = productoService.findById(idProducto);
-            return ResponseEntity.ok(producto);
-        } catch ( Exception e ) {
-            return  ResponseEntity.notFound().build();
+            return ResponseEntity.ok(productoService.findById(id));
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
         }
     }
 
-    @Operation(summary = "Buscar producto por nombre", responses = {
-            @ApiResponse(responseCode = "200", description = "producto encontrado",
-                content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Producto.class),
-                    examples = @ExampleObject(value = "{ 'id': 1, 'nombre': 'Producto1', 'descripcion': 'Descripción del Producto1', 'precio': 100.0, 'stock': 10 }")
-                )
-            ),
-            @ApiResponse(responseCode = "404", description = "producto no encontrado",
-                content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{ 'error': 'producto no encontrado' }")
-                )
-            )
+    // --- BUSCAR POR NOMBRE ---
+    @Operation(summary = "Buscar por nombre", description = "Busca productos que coincidan exactamente con el nombre.", parameters = {
+        @Parameter(name = "nom", description = "Nombre exacto del producto", required = true, example = "Anillo de Oro")
     })
     @GetMapping("/nombre/{nom}")
-    public ResponseEntity<List<Producto>> buscarPorNombre(
-        @Parameter(description = "Nombre del producto a buscar", required = true, example = "Producto1")
-        @PathVariable String nom) {
-        try {
-            List<Producto> productos = productoService.findBynombre(nom);
-            return ResponseEntity.ok(productos);
-        } catch ( Exception e ) {
-            return  ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<List<Producto>> buscarPorNombre(@PathVariable String nom) {
+        List<Producto> productos = productoService.findBynombre(nom);
+        return productos.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(productos);
     }
 
-    @Operation(summary = "Actualizar un Producto por id", responses = {
-            @ApiResponse(responseCode = "200", description = "Producto actualizado correctamente",
-                content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Producto.class),
-                    examples = @ExampleObject(value = "{ 'id': 1, 'nombre': 'Producto 1', 'descripcion': 'Descripción del Producto 1', 'precio': 100.0, 'stock': 10 }"))
-            ),
-            @ApiResponse(responseCode = "404", description = "Producto no encontrado",
-                content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{ 'error': 'Producto no encontrado' }"))
+    // --- ACTUALIZAR PRODUCTO (PUT) ---
+    @Operation(summary = "Actualizar producto", description = "Actualiza stock, precio, descripción o categoría.", responses = {
+        @ApiResponse(responseCode = "200", description = "Actualizado correctamente",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = Producto.class),
+                examples = @ExampleObject(name = "Actualizar Stock y Precio", value = """
+                    {
+                        "nombreProducto": "Pulsera de Plata",
+                        "descripcionProducto": "Plata fina 925 (Oferta)",
+                        "precio": 40000,
+                        "stock": 50,
+                        "categoria": {
+                            "idCategoria": 1
+                        }
+                    }
+                """)
             )
+        ),
+        @ApiResponse(responseCode = "404", description = "Producto no encontrado", content = @Content)
     })
     @PutMapping("/{id}")
-    public ResponseEntity<Producto> actualizar(
-        @Parameter(description = "ID del producto a actualizar", required = true, example = "1")
-        @PathVariable Integer idProducto,
-        @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Datos del Producto a actualizar",
-            required = true,
-            content = @Content(schema = @Schema(implementation = Producto.class),
-                examples = @ExampleObject(value = "{ 'id': 1, 'nombre': 'Producto 1', 'descripcion': 'Descripción del Producto 1', 'precio': 100.0, 'stock': 10 }")
-            )
-        ) 
-        @RequestBody Producto producto) {
+    public ResponseEntity<Producto> actualizar(@PathVariable Integer id, @RequestBody Producto producto) {
         try {
-            Producto pro = productoService.findById(idProducto);
-            pro.setDescripcionProducto(producto.getDescripcionProducto());
-            pro.setIdProducto(producto.getIdProducto());
-            pro.setNombreProducto(producto.getNombreProducto());
-            pro.setPrecio(producto.getPrecio());
-            pro.setStock(producto.getStock());
-
-            productoService.save(pro);
-            return ResponseEntity.ok(pro);
-        } catch ( Exception e ) {
-            return  ResponseEntity.notFound().build();
+            return ResponseEntity.ok(productoService.actualizarProducto(id, producto));
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
         }
     }
 
-    @Operation(summary = "Eliminar un Producto", responses = {
-            @ApiResponse(responseCode = "204", description = " Producto eliminado correctamente",
-                content = @Content),
-            @ApiResponse(responseCode = "404", description = " Producto no encontrado",
-                content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{ 'error': ' Producto no encontrado' }"))
-            )
+    // --- ELIMINAR PRODUCTO ---
+    @Operation(summary = "Eliminar producto por su id", responses = {
+        @ApiResponse(responseCode = "204", description = "Eliminado correctamente", content = @Content),
+        @ApiResponse(responseCode = "404", description = "No encontrado", content = @Content)
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminar(
-        @Parameter(description = "ID del producto a eliminar", required = true, example = "1")
-        @PathVariable Integer idProducto) {
+    public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
         try {
-            productoService.delete(idProducto);
+            productoService.delete(id);
             return ResponseEntity.noContent().build();
-        } catch ( Exception e ) {
-            return  ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
         }
     }
 }

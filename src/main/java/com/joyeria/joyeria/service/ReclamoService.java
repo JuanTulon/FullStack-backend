@@ -31,6 +31,11 @@ public class ReclamoService {
         return reclamos;
     }
 
+    public Reclamo findById(Integer id) {
+        return reclamoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Reclamo no encontrado con ID: " + id));
+    }
+
     @Transactional
     public Reclamo save(Reclamo reclamo) {
         return reclamoRepository.save(reclamo);

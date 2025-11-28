@@ -6,9 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
-
-import com.fasterxml.jackson.annotation.JsonBackReference;
-
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
@@ -32,9 +30,10 @@ public class Envio {
     @Schema(description = "Estado del envío del pedido", example = "Enviado")
     private String estado_envio;
 
+    // CAMBIO IMPORTANTE: Quitamos @JsonBackReference y usamos @JsonIgnoreProperties
+    // Esto permite ver el pedido, pero evita que el pedido vuelva a mostrar el envio (bucle)
     @OneToOne
     @JoinColumn(name = "id_pedido", referencedColumnName = "idPedido", nullable = false, unique = true)
-    @JsonBackReference
+    @JsonIgnoreProperties({"envio", "detalles", "usuario", "hibernateLazyInitializer", "handler"})
     private Pedido pedido;
-
 }
