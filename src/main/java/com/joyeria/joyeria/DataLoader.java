@@ -79,8 +79,8 @@ public class DataLoader implements CommandLineRunner {
 
         // Crear un ADMIN fijo para que puedas probar
         Usuario admin = new Usuario();
-        admin.setRun("21245279");
-        admin.setDv("3");
+        admin.setRun("12345678");
+        admin.setDv("5");
         admin.setNombre("Admin");
         admin.setApellido1("Sistema");
         admin.setApellido2("Joyeria");
