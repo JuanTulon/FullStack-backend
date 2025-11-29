@@ -15,6 +15,9 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.joyeria.joyeria.dto.PedidoRequest;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Date;
 import java.util.List;
@@ -26,6 +29,21 @@ public class PedidoController {
 
     @Autowired
     private PedidoService pedidoService;
+
+    @Operation(summary = "Realizar compra (Checkout)", description = "Genera un pedido completo, descuenta stock y calcula totales.")
+    @PostMapping("/comprar")
+    public ResponseEntity<?> realizarCompra(@RequestBody PedidoRequest request) {
+        try {
+            // Obtener el email del usuario logueado desde el Token
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String email = auth.getName();
+
+            Pedido pedido = pedidoService.crearPedidoDesdeVenta(request, email);
+            return ResponseEntity.status(HttpStatus.CREATED).body(pedido);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage()); // Ej: "Stock insuficiente"
+        }
+    }
 
     // --- LISTAR PEDIDOS ---
     @Operation(summary = "Listar historial de pedidos", responses = {
