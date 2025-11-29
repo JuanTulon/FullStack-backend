@@ -19,7 +19,7 @@ public class RolUsuario {
     @Id  // Especifica el identificador primario.
     @GeneratedValue(strategy = GenerationType.IDENTITY)  // El valor del ID se generará automáticamente.
     @Schema(description = "Identificador único del rol de usuario", example = "1")
-    private int id;
+    private Integer id;
 
     // Usamos un Enum para evitar errores de tipeo como "Admin" vs "admin"
     @Enumerated(EnumType.STRING)

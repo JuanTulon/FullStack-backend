@@ -25,7 +25,7 @@ public class Usuario {
     @Id  // Especifica el identificador primario.
     @GeneratedValue(strategy = GenerationType.IDENTITY)  // El valor del ID se generará automáticamente.
     @Schema(description = "Identificador único del usuario", example = "1")
-    private int id;
+    private Integer id;
 
     @Column(unique=true, length = 13, nullable=false)  // Define las restricciones para la columna en la tabla.
     @Schema(description = "RUN del usuario (sin dígito verificador)", example = "12345678")
@@ -59,10 +59,6 @@ public class Usuario {
     @Column(nullable=false)  // Esta columna no puede ser nula.
     @Schema(description = "Teléfono de contacto del usuario", example = "987654321")
     private Integer telefono;
-
-    @Column(nullable=true)  // Esta columna puede ser nula.
-    @Schema(description = "Historial de pedidos del usuario (opcional)", example = "Pedido1, Pedido2")
-    private String historialPedidos;
     
     @Column(nullable=false)  // Define las restricciones para la columna en la tabla.
     @Schema(description = "contraseña del usuario", example = "password123")

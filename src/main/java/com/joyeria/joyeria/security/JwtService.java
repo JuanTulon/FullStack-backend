@@ -3,6 +3,7 @@ package com.joyeria.joyeria.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -17,8 +18,8 @@ import java.util.function.Function;
 public class JwtService {//genercion de token y validacion
     
     //en produccion, esta clave deberia estar en apllication.properties
-    private static final String SECRET_KEY = "clavesecreta";
-
+    private static final String SECRET_KEY = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
+    
     public String extractUsername(String token){
         return extractClaim(token, Claims::getSubject);
     }
@@ -65,6 +66,8 @@ public class JwtService {//genercion de token y validacion
     }
 
     private Key getSignInKey() {
-        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+        // CAMBIO: Decodificamos la clave Base64 en lugar de usar getBytes() directo
+        byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 }

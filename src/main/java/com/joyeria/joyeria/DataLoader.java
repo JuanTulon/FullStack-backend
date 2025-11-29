@@ -9,7 +9,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -64,9 +63,10 @@ public class DataLoader implements CommandLineRunner {
 
     private void crearRoles() {
         if (rolUsuarioRepository.count() == 0) {
-            rolUsuarioRepository.save(new RolUsuario(0, RolUsuario.NombreRol.ROLE_ADMIN));
-            rolUsuarioRepository.save(new RolUsuario(0, RolUsuario.NombreRol.ROLE_EMPLEADO));
-            rolUsuarioRepository.save(new RolUsuario(0, RolUsuario.NombreRol.ROLE_USUARIO));
+            // CAMBIO: Pasamos 'null' como ID para que Hibernate sepa que es NUEVO y haga INSERT
+            rolUsuarioRepository.save(new RolUsuario(null, RolUsuario.NombreRol.ROLE_ADMIN));
+            rolUsuarioRepository.save(new RolUsuario(null, RolUsuario.NombreRol.ROLE_EMPLEADO));
+            rolUsuarioRepository.save(new RolUsuario(null, RolUsuario.NombreRol.ROLE_USUARIO));
         }
     }
 
@@ -85,7 +85,7 @@ public class DataLoader implements CommandLineRunner {
         admin.setApellido1("Sistema");
         admin.setApellido2("Joyeria");
         admin.setEmail("admin@joyeria.com");
-        admin.setPassword(passwordEncoder.encode("admin123"));
+        admin.setPassword(passwordEncoder.encode("Admin123."));
         admin.setTelefono(999999999);
         admin.setFechaNacimiento(new Date());
         

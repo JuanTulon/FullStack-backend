@@ -1,6 +1,5 @@
 package com.joyeria.joyeria.service;
 
-import com.joyeria.joyeria.model.Categoria;
 import com.joyeria.joyeria.model.Producto;
 import com.joyeria.joyeria.repository.ProductoRepository;
 import jakarta.transaction.Transactional;

@@ -30,9 +30,6 @@ public class SecurityConfig {
     @Autowired
     private JwtAuthenticationFilter jwtAuthFilter;
 
-    @Autowired
-    private CustomUserDetailsService userDetailsService;
-
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -63,6 +60,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/categorias/**").permitAll()
                 .requestMatchers("/api/v1/reclamos/**").permitAll()
                 .requestMatchers("/doc/**", "/v3/api-docs/**").permitAll()
+
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/usuarios").permitAll()
+
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authProvider)
