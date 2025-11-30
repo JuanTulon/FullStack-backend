@@ -12,7 +12,7 @@ public class SwaggerConfig {
     public OpenAPI customOpenAPI(){
         return new OpenAPI()
                 .info(new Info()
-                        .title("Joseki API")
+                        .title("hoseki API")
                         .version("1.0")
                         .description("documentacion de la API para el proyecto joseki."));
     }

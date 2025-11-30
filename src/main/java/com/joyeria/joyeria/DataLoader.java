@@ -139,18 +139,33 @@ public class DataLoader implements CommandLineRunner {
 
     private List<Producto> crearProductos(int cantidad, List<Categoria> categorias) {
         List<Producto> productos = new ArrayList<>();
+        
+        // RUTAS CORRECTAS (Apuntan a la carpeta 'public/images' del frontend)
+        String[] imagenes = {
+            "/images/reloj1.jpg", 
+            "/images/pulseraH.jpg", 
+            "/images/imagen_pi_1.jpg",
+            "/images/imagen_pi_2.jpg",
+            "/images/imagen_pi_3.jpg",
+            // También puedes mezclar con URLs reales de internet 
+            "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=500&q=60"
+        };
+
         for (int i = 0; i < cantidad; i++) {
             Producto p = new Producto();
             Categoria cat = categorias.get(faker.random().nextInt(categorias.size()));
             
             String material = faker.options().option("Oro", "Plata", "Platino", "Acero");
-            String tipo = cat.getNombreCategoria(); // Ej: "Anillo"
+            String tipo = cat.getNombreCategoria(); 
             
-            p.setNombreProducto(tipo + " de " + material + " " + faker.ancient().god());
-            p.setDescripcionProducto("Hermoso " + tipo.toLowerCase() + " fabricado en " + material + ". " + faker.lorem().sentence());
+            p.setNombreProducto(tipo + " " + faker.ancient().god());
+            p.setDescripcionProducto("Hermoso diseño en " + material + " con detalles únicos.");
             p.setPrecio(faker.number().numberBetween(15000, 500000));
             p.setStock(faker.number().numberBetween(0, 50));
             p.setCategoria(cat);
+            
+            // Asigna una foto aleatoria de la lista correcta
+            p.setFoto(imagenes[faker.random().nextInt(imagenes.length)]);
             
             productos.add(productoRepository.save(p));
         }

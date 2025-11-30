@@ -49,15 +49,14 @@ public class Pedido {
     // CAMBIO CLAVE: Usamos @JsonIgnoreProperties
     // Permite ver el usuario que compró, pero ignora su lista de 'pedidos' para no hacer bucle.
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_usuario", nullable = false, foreignKey = @ForeignKey(name = "fk_pedido_usuario"))
-    @JsonIgnoreProperties({"pedidos", "hibernateLazyInitializer", "handler"})
+    @JoinColumn(name = "id_usuario", nullable = false)
+    @JsonIgnoreProperties({"pedidos", "hibernateLazyInitializer", "handler", "password", "roles"}) 
     private Usuario usuario;
 
-    // Relación con Detalles (El corte de bucle lo hace la clase DetallePedido)
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("pedido") // Para evitar bucle al mostrar detalles
     private List<DetallePedido> detalles;
 
-    // Relación con Envio (El corte de bucle lo hace la clase Envio)
     @OneToOne(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties("pedido")
     private Envio envio;
