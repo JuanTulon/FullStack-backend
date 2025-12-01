@@ -52,10 +52,10 @@ public class DataLoader implements CommandLineRunner {
             System.out.println("--- INICIANDO CARGA DE DATOS DE PRUEBA (DATAFAKER) ---");
             
             crearRoles();
-            List<Usuario> usuarios = crearUsuarios(10); // Crea 10 usuarios
-            List<Categoria> categorias = crearCategorias();
-            List<Producto> productos = crearProductos(20, categorias); // Crea 20 productos
-            crearPedidos(15, usuarios, productos); // Crea 15 pedidos aleatorios
+            List<Usuario> usuarios = crearUsuarios(5); // Crea 5 usuarios
+            Map<String, Categoria> categorias = crearCategorias();
+            List<Producto> productos = cargarProductosCatalogo(categorias);
+            crearPedidos(5, usuarios, productos);
 
             System.out.println("--- CARGA DE DATOS COMPLETADA CON ÉXITO ---");
         }
@@ -125,101 +125,114 @@ public class DataLoader implements CommandLineRunner {
         return usuarios;
     }
 
-    private List<Categoria> crearCategorias() {
-        List<Categoria> categorias = new ArrayList<>();
-        String[] nombres = {"Anillos", "Collares", "Pulseras", "Relojes", "Aros", "Piedras Preciosas"};
+    private Map<String, Categoria> crearCategorias() {
+        Map<String, Categoria> mapa = new HashMap<>();
+        // Nombres exactos que usabas en el JSON (en minúsculas para coincidir con las claves)
+        String[] nombres = {"collares", "anillos", "aros", "pulseras", "relojes"};
         
         for (String nombre : nombres) {
             Categoria c = new Categoria();
-            c.setNombreCategoria(nombre);
-            categorias.add(categoriaRepository.save(c));
+            // Guardamos con mayúscula inicial para que se vea bonito (ej: "Collares")
+            c.setNombreCategoria(nombre.substring(0, 1).toUpperCase() + nombre.substring(1));
+            mapa.put(nombre, categoriaRepository.save(c));
         }
-        return categorias;
+        return mapa;
     }
 
-    private List<Producto> crearProductos(int cantidad, List<Categoria> categorias) {
-        List<Producto> productos = new ArrayList<>();
-        
-        // RUTAS CORRECTAS (Apuntan a la carpeta 'public/images' del frontend)
-        String[] imagenes = {
-            "/images/reloj1.jpg", 
-            "/images/pulseraH.jpg", 
-            "/images/imagen_pi_1.jpg",
-            "/images/imagen_pi_2.jpg",
-            "/images/imagen_pi_3.jpg",
-            // También puedes mezclar con URLs reales de internet 
-            "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=500&q=60"
-        };
+    private List<Producto> cargarProductosCatalogo(Map<String, Categoria> cats) {
+        List<Producto> lista = new ArrayList<>();
 
-        for (int i = 0; i < cantidad; i++) {
-            Producto p = new Producto();
-            Categoria cat = categorias.get(faker.random().nextInt(categorias.size()));
-            
-            String material = faker.options().option("Oro", "Plata", "Platino", "Acero");
-            String tipo = cat.getNombreCategoria(); 
-            
-            p.setNombreProducto(tipo + " " + faker.ancient().god());
-            p.setDescripcionProducto("Hermoso diseño en " + material + " con detalles únicos.");
-            p.setPrecio(faker.number().numberBetween(15000, 500000));
-            p.setStock(faker.number().numberBetween(0, 50));
-            p.setCategoria(cat);
-            
-            // Asigna una foto aleatoria de la lista correcta
-            p.setFoto(imagenes[faker.random().nextInt(imagenes.length)]);
-            
-            productos.add(productoRepository.save(p));
-        }
-        return productos;
+        // Aquí están tus productos "fijos" del JSON
+        
+        lista.add(crearProducto("Collar de oro", "Collar fino con detalles de estrellas y lunas", 
+            350000, 15, "/images/imagen_para_2.jpg", cats.get("collares")));
+
+        lista.add(crearProducto("Cadena de Eslabones", "Cadena de eslabones rectangulares", 
+            400000, 8, "/images/imagen_pi_2.jpg", cats.get("collares")));
+
+        lista.add(crearProducto("Anillo de Oro", "Anillo clásico en oro de 18k", 
+            200000, 12, "/images/imagen_pi_3.jpg", cats.get("anillos")));
+
+        lista.add(crearProducto("Aretes de Colgantes", "Aretes elegantes con diseño de colgante", 
+            150000, 20, "/images/imagen_pi_5.jpg", cats.get("aros")));
+
+        lista.add(crearProducto("Set de aros", "Set de aros de oro de 9k", 
+            50000, 10, "/images/imagen_pi_6.jpg", cats.get("aros")));
+
+        lista.add(crearProducto("Cadena con dije", "Cadena de oro con dije en forma de chapa", 
+            60000, 5, "/images/Imagen_tendencia_1.jpg", cats.get("collares")));
+
+        lista.add(crearProducto("Set de 2 aros", "Set de 2 aros bañados en oro", 
+            45000, 18, "/images/Imagen_tendencia_2.jpg", cats.get("aros")));
+
+        lista.add(crearProducto("Anillo de oro con piedra", "Anillo de oro con piedra central redonda", 
+            250000, 7, "/images/Imagen_tendencia_3.jpg", cats.get("anillos")));
+
+        lista.add(crearProducto("Brazalete", "Brazalete de oro liso", 
+            90000, 10, "/images/Imagen_tendencia_4.jpg", cats.get("pulseras")));
+
+        lista.add(crearProducto("Pulsera de eslabones", "Pulsera de eslabones gruesos", 
+            120000, 14, "/images/pulseraH.jpg", cats.get("pulseras")));
+
+        lista.add(crearProducto("Reloj", "Reloj de acero inoxidable con movimiento de cuarzo", 
+            50000, 25, "/images/reloj1.jpg", cats.get("relojes")));
+
+        lista.add(crearProducto("Reloj Invicta pro diver", "Reloj invicta plateado con detalles en dorado", 
+            214000, 30, "/images/reloj2.jpg", cats.get("relojes")));
+
+        return lista;
+    }
+
+    private Producto crearProducto(String nombre, String desc, Integer precio, Integer stock, String foto, Categoria cat) {
+        Producto p = new Producto();
+        p.setNombreProducto(nombre);
+        p.setDescripcionProducto(desc);
+        p.setPrecio(precio);
+        p.setStock(stock);
+        p.setFoto(foto);
+        p.setCategoria(cat);
+        
+        return productoRepository.save(p);
     }
 
     private void crearPedidos(int cantidad, List<Usuario> usuarios, List<Producto> productos) {
+        // Generamos algunos pedidos de prueba usando los productos reales
         for (int i = 0; i < cantidad; i++) {
-            Pedido pedido = new Pedido();
-            Usuario cliente = usuarios.get(faker.random().nextInt(usuarios.size()));
-            
-            pedido.setUsuario(cliente);
-            pedido.setFechaPedido(faker.date().past(30, TimeUnit.DAYS));
-            pedido.setDireccionEnvio(faker.address().fullAddress());
-            pedido.setMetodoPago(faker.options().option("WebPay", "Transferencia", "Crédito"));
-            
-            // Estado aleatorio
-            String estado = faker.options().option("Pendiente", "Pagado", "Enviado", "Entregado");
-            pedido.setEstadoPedido(estado);
-            
-            // Guardamos primero para tener ID
-            pedido.setTotalPedido(0); // Se calcula después
-            pedido = pedidoRepository.save(pedido);
+            try {
+                Pedido pedido = new Pedido();
+                Usuario cliente = usuarios.get(faker.random().nextInt(usuarios.size()));
+                
+                pedido.setUsuario(cliente);
+                pedido.setFechaPedido(faker.date().past(30, TimeUnit.DAYS));
+                pedido.setDireccionEnvio(faker.address().fullAddress());
+                pedido.setMetodoPago("WebPay");
+                pedido.setEstadoPedido("Enviado");
+                pedido.setTotalPedido(0); 
+                
+                pedido = pedidoRepository.save(pedido);
 
-            // Crear detalles (productos del pedido)
-            int numDetalles = faker.number().numberBetween(1, 4);
-            int total = 0;
-            
-            for (int j = 0; j < numDetalles; j++) {
                 DetallePedido det = new DetallePedido();
                 Producto prod = productos.get(faker.random().nextInt(productos.size()));
-                int cantidadProd = faker.number().numberBetween(1, 3);
                 
                 det.setPedido(pedido);
                 det.setProducto(prod);
-                det.setCantidadProducto(cantidadProd);
-                // Ojo: Manejar posibles nulos en precio si fuera necesario, aquí asumimos que tienen
-                det.setSubtotal(prod.getPrecio() * cantidadProd);
+                det.setCantidadProducto(1);
+                det.setSubtotal(prod.getPrecio());
                 
                 detallePedidoRepository.save(det);
-                total += det.getSubtotal();
-            }
-            
-            // Actualizar total
-            pedido.setTotalPedido(total);
-            pedidoRepository.save(pedido);
-
-            // Si el pedido está Enviado o Entregado, crear Envío
-            if (estado.equals("Enviado") || estado.equals("Entregado")) {
+                
+                pedido.setTotalPedido(det.getSubtotal());
+                pedidoRepository.save(pedido);
+                
+                // Crear envío
                 Envio envio = new Envio();
                 envio.setPedido(pedido);
-                envio.setFecha_envio(faker.date().future(5, TimeUnit.DAYS, pedido.getFechaPedido()));
-                envio.setEstado_envio(estado.equals("Enviado") ? "En Camino" : "Entregado");
+                envio.setFecha_envio(new Date());
+                envio.setEstado_envio("En Camino");
                 envioRepository.save(envio);
+
+            } catch (Exception e) {
+                // Ignorar errores de generación aleatoria
             }
         }
     }
