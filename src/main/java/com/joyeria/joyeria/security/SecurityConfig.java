@@ -1,17 +1,16 @@
 package com.joyeria.joyeria.security;
 
-// IMPORTS CORRECTOS (Verifica que tengas estos)
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider; // <--- IMPORTANTE
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService; // <--- IMPORTANTE
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -37,9 +36,8 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
-        // CORRECCIÓN: Pasamos el userDetailsService DIRECTAMENTE en el constructor
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);        
-        authProvider.setPasswordEncoder(passwordEncoder); // Mantenemos esto
+        authProvider.setPasswordEncoder(passwordEncoder);
         return authProvider;
     }
 
@@ -55,14 +53,34 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/auth/**").permitAll()
-                .requestMatchers("/api/v1/productos/**").permitAll()
-                .requestMatchers("/api/v1/categorias/**").permitAll()
-                .requestMatchers("/api/v1/reclamos/**").permitAll()
+                // 1. Rutas Públicas (Todo el mundo puede entrar sin token)
+                .requestMatchers("/api/v1/auth/**").permitAll() // Login y Registro
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/productos/**").permitAll() // Ver productos
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/categorias/**").permitAll() // Ver categorías
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/reclamos").permitAll() // Crear reclamo (cualquiera puede reclamar)
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/usuarios").permitAll() // Registro de usuario normal
+                
+                // Documentación Swagger (Público para facilitar pruebas, o puedes restringirlo)
                 .requestMatchers("/doc/**", "/v3/api-docs/**").permitAll()
 
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/usuarios").permitAll()
+                // 2. Rutas Protegidas (Requieren Token y Rol Específico)
+                // PRODUCTOS: Solo ADMIN puede crear, editar o borrar
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/productos/**").hasRole("ADMIN")
+                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/v1/productos/**").hasRole("ADMIN")
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/productos/**").hasRole("ADMIN")
 
+                // CATEGORÍAS: Solo ADMIN
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/categorias/**").hasRole("ADMIN")
+                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/v1/categorias/**").hasRole("ADMIN")
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/categorias/**").hasRole("ADMIN")
+
+                // RECLAMOS: Solo ADMIN o EMPLEADO pueden VER la lista de reclamos
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/reclamos/**").hasAnyRole("ADMIN", "EMPLEADO")
+
+                // USUARIOS: Solo ADMIN puede ver la lista de usuarios
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/usuarios/**").hasRole("ADMIN")
+
+                // 3. Cualquier otra cosa requiere al menos estar autenticado (Token válido)
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authProvider)
