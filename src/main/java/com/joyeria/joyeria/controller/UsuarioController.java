@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@CrossOrigin("http://hoseki.s3-website.us-east-2.amazonaws.com")
 @Tag(name = "Usuarios", description = "Gestión de usuarios del sistema")
 @RestController
 @RequestMapping("/api/v1/usuarios")

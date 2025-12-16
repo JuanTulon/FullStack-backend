@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@CrossOrigin("http://hoseki.s3-website.us-east-2.amazonaws.com")
 @Tag(name = "Categorías", description = "Gestión de tipos de joyas (anillos, collares, etc.)")
 @RestController
 @RequestMapping("/api/v1/categorias")

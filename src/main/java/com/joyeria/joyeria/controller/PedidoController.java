@@ -22,6 +22,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.Date;
 import java.util.List;
 
+@CrossOrigin("http://hoseki.s3-website.us-east-2.amazonaws.com")
 @Tag(name = "Pedidos", description = "Gestión de órdenes de compra")
 @RestController
 @RequestMapping("/api/v1/pedidos")
